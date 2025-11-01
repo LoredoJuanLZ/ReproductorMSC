@@ -1,0 +1,398 @@
+/* --- Variables de Tema (Por defecto: Azul Glassmorphism) --- */
+:root {
+    --main-color: #3e9dff; 
+    --sphere-1-color: #ff3e3e; 
+    --sphere-2-color: #3e9dff; 
+    --sphere-3-color: #3eff75; 
+    --sensitivity-multiplier: 0.5; 
+    
+    /* VARIABLES PARA CONTROLAR LA INTERFAZ DE USUARIO */
+    --card-base-color: 255, 255, 255; /* Base de color RGB (Blanco por defecto) */
+    --card-bg-opacity: 0.1; /* Opacidad del fondo de la tarjeta */
+    --card-border-color: rgba(255, 255, 255, 0.18); /* Color del borde de la tarjeta */
+    --card-text-color: #ffffff; /* Color de texto general */
+    --glass-blur: blur(15px); /* Efecto blur */
+    --body-bg: linear-gradient(135deg, #1e3a8a, #0c0a09); /* Fondo por defecto (Glassmorphism) */
+    --sphere-opacity: 0.8; /* Opacidad de las esferas cuando están visibles */
+}
+
+/* --- 1. Estilos Base y Fondo --- */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    overflow-x: hidden;
+    background: var(--body-bg); /* Fondo controlado por la variable JS */
+    transition: background 0.7s ease-in-out;
+}
+
+/* CONTENEDOR PRINCIPAL */
+.main-container { 
+    display: flex;
+    gap: 20px; 
+    z-index: 1; 
+    align-items: flex-start; 
+}
+
+/* Contenedores de Fondo (Esferas) */
+.background {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+}
+
+.color-sphere {
+    position: absolute; width: 250px; height: 250px; border-radius: 50%;
+    filter: blur(100px); 
+    opacity: var(--sphere-opacity); 
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out, background-color 0.5s ease-in-out; 
+}
+
+/* Asignación de color DINÁMICO */
+#sphere-1 { background-color: var(--sphere-1-color); top: 10%; left: 15%; }
+#sphere-2 { background-color: var(--sphere-2-color); top: 40%; left: 45%; }
+#sphere-3 { background-color: var(--sphere-3-color); bottom: 5%; right: 20%; }
+
+/* --- Estilos de Drag and Drop --- */
+.player-card, 
+.playlist-panel, 
+.color-selector {
+    cursor: grab; 
+    transition: transform 0.2s, opacity 0.2s, background 0.5s, border 0.5s, color 0.5s, backdrop-filter 0.5s;
+}
+.dragging {
+    opacity: 0.5; 
+}
+
+
+/* --- 2. Estilos del Reproductor (APLICACIÓN DE VARIABLES DE TEMA) --- */
+.player-card {
+    display: flex; flex-direction: column; 
+    /* CORRECCIÓN: Usamos --card-base-color para cambiar entre blanco y negro */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--card-border-color);
+    color: var(--card-text-color); 
+    width: 450px; 
+    min-width: 450px; 
+    padding: 30px;
+}
+
+.controls-panel { display: flex; flex-direction: column; gap: 20px; }
+#audio-player { display: none; }
+
+/* 3. Estilos de Información y Portada */
+.song-info { display: flex; align-items: flex-start; gap: 20px; width: 100%; flex-wrap: nowrap;}
+.album-art { 
+    width: 120px; height: 120px; 
+    background: rgba(255, 255, 255, 0.15); 
+    border-radius: 15px; display: flex; justify-content: center; align-items: center; background-size: cover; background-position: center; flex-shrink: 0; position: relative; 
+}
+#visualizer-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.6; border-radius: 15px; }
+#album-icon { position: relative; font-size: 80px; color: var(--card-text-color); opacity: 0.6; } 
+
+.text-details { flex-grow: 1; width: calc(100% - 140px); overflow: hidden; }
+.song-title { margin: 0 0 5px 0; font-size: 1.8em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.artist-name { margin: 0; font-size: 1em; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 4. Estilos de Controles */
+.player-controls { display: flex; justify-content: center; gap: 30px; align-items: center; }
+.control-btn, .play-btn { 
+    /* CORRECCIÓN: Usamos --card-base-color para el fondo de los botones */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border: none; border-radius: 50%; 
+    color: var(--card-text-color); 
+    cursor: pointer; transition: background 0.3s, transform 0.1s; display: flex; justify-content: center; align-items: center; 
+}
+.control-btn { width: 45px; height: 45px; font-size: 24px; opacity: 0.8; }
+.play-btn { width: 70px; height: 70px; background: var(--main-color); font-size: 36px; box-shadow: 0 0 20px var(--main-color); transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out,transform 0.1s; }
+
+/* 5. Estilos de la Barra de Progreso */
+.progress-bar-container { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+.progress-bar { 
+    flex-grow: 1; height: 6px; 
+    /* CORRECCIÓN: Usamos --card-base-color para el fondo de la barra de progreso */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border-radius: 3px; cursor: pointer; 
+}
+.progress-line { width: 0%; height: 100%; background: var(--main-color); border-radius: 3px; transition: width 0.1s linear, background 0.5s ease-in-out; }
+.time-current, .time-total { font-size: 0.85em; opacity: 0.7; width: 35px; text-align: center; }
+
+/* 6. Estilos del Botón de Carga Personalizado */
+.file-uploader { margin-top: 15px; }
+#file-input { display: none; }
+.custom-file-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 25px; 
+    /* CORRECCIÓN: Usamos --card-base-color para el fondo del botón de carga */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    color: var(--card-text-color); font-weight: 500; cursor: pointer; transition: background 0.3s, transform 0.1s; 
+    font-size: 0.9em; text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+.custom-file-btn:hover { background: rgba(var(--card-base-color), 0.35); }
+
+/* --- 7. Estilos del Selector de Color --- */
+.color-selector {
+    z-index: 10;
+    display: flex; 
+    gap: 0; 
+    flex-direction: column; 
+    
+    /* CORRECCIÓN: Usamos --card-base-color para el fondo del selector */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--card-border-color);
+    color: var(--card-text-color);
+    padding: 20px; 
+    width: 170px; 
+    min-height: 400px; 
+    position: relative;
+}
+
+/* Título de Colores */
+.color-options-panel h3 { margin: 0; font-size: 1.0em; opacity: 0.8; }
+
+/* Estilos internos de controles de color */
+.color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+.color-swatch { 
+    --swatch-color: #fff; width: 25px; height: 25px; 
+    border-radius: 50%; background-color: var(--swatch-color); border: 3px solid transparent; 
+    cursor: pointer; transition: transform 0.2s, border-color 0.2s; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); 
+    position: relative; 
+    z-index: 21;
+}
+.color-swatch.active { border-color: var(--card-text-color); transform: scale(1.1); }
+
+
+/* Sub-panel de control de sensibilidad (Slider) */
+.sensitivity-control {
+    position: absolute;
+    left: 100%; 
+    top: 50%;
+    transform: translate(15px, -50%); 
+    
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    width: 30px; 
+    height: 100%;
+    z-index: 15; 
+    pointer-events: auto; 
+}
+
+.slider-container {
+    display: flex;
+    height: 280px; 
+    align-items: center;
+    padding: 0; 
+    position: static; 
+    transform: none; 
+    z-index: 1; 
+}
+
+/* Estilos para el input de rango (slider) vertical */
+#sensitivity-slider {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    
+    width: 200px; 
+    height: 8px; 
+    transform: rotate(270deg);
+    transform-origin: 50% 50%;
+    
+    margin: 0; 
+    position: static; 
+}
+
+/* Estilo de la pista del slider */
+#sensitivity-slider::-webkit-slider-runnable-track {
+    background: rgba(var(--card-base-color), 0.2); /* CORRECCIÓN: Usamos --card-base-color */
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+}
+#sensitivity-slider::-moz-range-track {
+    background: rgba(var(--card-base-color), 0.2); /* CORRECCIÓN: Usamos --card-base-color */
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Estilo del "pulgar" (thumb) del slider */
+#sensitivity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -3.5px; 
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--main-color);
+    box-shadow: 0 0 10px var(--main-color);
+    transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+}
+#sensitivity-slider::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--main-color);
+    box-shadow: 0 0 10px var(--main-color);
+    border: none;
+    transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+}
+
+/* --- 8. Estilos del Panel de Lista de Reproducción --- */
+.playlist-panel {
+    width: 300px; height: 400px; 
+    /* CORRECCIÓN: Usamos --card-base-color para el fondo del panel */
+    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); backdrop-filter: var(--glass-blur); 
+    border: 1px solid var(--card-border-color); 
+    color: var(--card-text-color);
+    padding: 20px; display: flex; flex-direction: column; z-index: 1; 
+    margin-top: 0; 
+}
+.playlist-panel h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.2em; font-weight: 600; border-bottom: 1px solid var(--card-border-color); padding-bottom: 10px; }
+#playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+#playlist-list::-webkit-scrollbar { width: 5px; }
+#playlist-list::-webkit-scrollbar-thumb { background: rgba(var(--card-base-color), 0.3); border-radius: 10px; }
+#playlist-list li { padding: 8px 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; font-size: 0.9em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* Usamos --card-base-color con opacidad para el hover */
+#playlist-list li:hover { background: rgba(var(--card-base-color), 0.15); } 
+#playlist-list li.current-track { background: var(--main-color); color: #fff; font-weight: bold; box-shadow: 0 0 10px var(--main-color); transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out; }
+.empty-message { opacity: 0.6; font-style: italic; text-align: center; padding-top: 50px !important; cursor: default !important; }
+
+
+/* =================================================================== */
+/* --- 9. MEDIA QUERIES (Responsividad) --- */
+/* =================================================================== */
+
+@media (max-width: 900px) {
+    
+    /* Asegura que el contenedor principal esté alineado arriba para evitar grandes espacios vacíos */
+    body {
+        align-items: flex-start;
+        min-height: 100vh;
+        padding-top: 20px; /* Pequeño margen superior */
+    }
+
+    /* 1. Contenedor Principal (Cambio de Layout) */
+    .main-container {
+        /* Apila los elementos verticalmente */
+        flex-direction: column;
+        gap: 25px;
+        padding: 0 20px; /* Padding horizontal */
+        align-items: center; /* Centra los bloques en la columna */
+        width: 100%;
+        box-sizing: border-box; /* Incluye padding en el ancho */
+    }
+    
+    /* 2. Reproductor y Paneles (Ajuste de Ancho) */
+    .player-card {
+        width: 100%; /* Ocupa todo el ancho disponible menos el padding */
+        min-width: 0; /* Permite que el ancho se reduzca */
+        max-width: 450px; /* Mantiene un límite máximo para tablets */
+        box-sizing: border-box;
+        padding: 20px; /* Reduce un poco el padding interno */
+    }
+    
+    .playlist-panel {
+        width: 100%; 
+        max-width: 450px;
+        height: 300px; /* Altura ajustada para móviles */
+        box-sizing: border-box;
+    }
+    
+    /* 3. Selector de Color y Sensibilidad (Posicionamiento y Estilo) */
+    .color-selector {
+        flex-direction: row; /* Coloca el slider junto a los colores */
+        width: 100%;
+        max-width: 450px;
+        padding: 15px 20px;
+        min-height: auto;
+        justify-content: space-between;
+        align-items: center;
+        box-sizing: border-box;
+    }
+    
+    /* Reposiciona el control de sensibilidad DENTRO del .color-selector */
+    .sensitivity-control {
+        position: static; 
+        transform: none; 
+        width: 100px; /* Ancho ajustado */
+        height: auto;
+        display: flex;
+        justify-content: flex-end; /* Alinea el slider a la derecha */
+        padding-right: 0;
+    }
+
+    /* Gira el slider de nuevo a horizontal y ajusta el tamaño */
+    .slider-container {
+        height: 30px; 
+    }
+    
+    #sensitivity-slider {
+        width: 100px; /* Lo hacemos más pequeño */
+        transform: rotate(0deg); /* Vuelve a ser horizontal */
+        margin: 0;
+    }
+    
+    /* 4. Información de la Canción (Ajuste para Espacio) */
+    .song-info {
+        flex-wrap: wrap; /* Permite que la portada y el texto se envuelvan si es necesario */
+        justify-content: center;
+    }
+    
+    .text-details {
+        text-align: center;
+        width: 100%; /* Ocupa todo el ancho debajo de la carátula */
+        margin-top: 10px;
+    }
+    
+    .song-title { font-size: 1.5em; }
+    .artist-name { font-size: 0.9em; }
+
+    /* Ajuste para el botón de carga */
+    .custom-file-btn {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 500px) {
+    /* Ajustes para móviles muy pequeños */
+    
+    /* Reduce el tamaño de la portada para ahorrar espacio vertical */
+    .album-art {
+        width: 100px;
+        height: 100px;
+    }
+    #album-icon {
+        font-size: 60px;
+    }
+    .play-btn { 
+        width: 60px; 
+        height: 60px; 
+        font-size: 30px; 
+    }
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+}

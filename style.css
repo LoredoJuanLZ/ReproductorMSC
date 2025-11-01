@@ -25,7 +25,11 @@ body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     overflow-x: hidden;
-    background: var(--body-bg); /* Fondo controlado por la variable JS */
+    
+    /* CORRECCIÓN CLAVE: Establecer un fondo sólido (negro) ANTES del gradiente. */
+    background-color: #000000; 
+    
+    background: var(--body-bg); 
     transition: background 0.7s ease-in-out;
 }
 
@@ -70,10 +74,10 @@ body {
 /* --- 2. Estilos del Reproductor (APLICACIÓN DE VARIABLES DE TEMA) --- */
 .player-card {
     display: flex; flex-direction: column; 
-    /* CORRECCIÓN: Usamos --card-base-color para cambiar entre blanco y negro */
     background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
     border-radius: 20px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    /* CLAVE: Aplicar el blur como variable CSS */
     backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--card-border-color);
     color: var(--card-text-color); 
@@ -102,7 +106,6 @@ body {
 /* 4. Estilos de Controles */
 .player-controls { display: flex; justify-content: center; gap: 30px; align-items: center; }
 .control-btn, .play-btn { 
-    /* CORRECCIÓN: Usamos --card-base-color para el fondo de los botones */
     background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
     border: none; border-radius: 50%; 
     color: var(--card-text-color); 
@@ -114,12 +117,92 @@ body {
 /* 5. Estilos de la Barra de Progreso */
 .progress-bar-container { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
 .progress-bar { 
-    flex-grow: 1; height: 6px; 
-    /* CORRECCIÓN: Usamos --card-base-color para el fondo de la barra de progreso */
-    background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
-    border-radius: 3px; cursor: pointer; 
+    flex-grow: 1; 
+    height: 8px;
+    background: rgba(var(--card-base-color), 0.2); 
+    border-radius: 4px;
+    cursor: pointer; 
+    position: relative; 
+    overflow: visible; 
 }
-.progress-line { width: 0%; height: 100%; background: var(--main-color); border-radius: 3px; transition: width 0.1s linear, background 0.5s ease-in-out; }
+.progress-line { 
+    width: 0%; 
+    height: 100%;
+    background: var(--main-color); 
+    border-radius: 3px; 
+    transform-origin: bottom; 
+    
+   transition: width 0.1s linear, background 0.5s ease-in-out, transform 0.1s ease-out, box-shadow 0.1s ease-out, opacity 0.3s ease-in-out;
+    
+    position: relative; 
+    overflow: visible; /* Cambiado a visible para evitar recortes */
+    display: flex; /* Mantenemos display: flex para que las barras internas funcionen */
+    justify-content: flex-start;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 2px;
+    opacity: 1; /* Por defecto visible */
+}
+
+/* Estilos dinámicos para los estilos de la barra de progreso (controlados por el data-attribute) */
+
+/* 1. Estilo Línea (default) */
+.progress-line[data-style="line"] {
+    transform-origin: center; 
+    opacity: 1;
+    background: var(--main-color);
+}
+.progress-line[data-style="line"] .dyn-bar {
+    display: none; /* Oculta las barras dinámicas */
+}
+
+/* 2. Estilo SPARK (Pulsación Vertical más discreta y rápida) */
+.progress-line[data-style="spark"] {
+    box-shadow: none !important; 
+    transition: width 0.1s linear, transform 0.05s ease-out; 
+    transform-origin: center; 
+    opacity: 1;
+    background: var(--main-color);
+}
+.progress-line[data-style="spark"] .dyn-bar {
+    display: none; /* Oculta las barras dinámicas */
+}
+
+/* 3. Estilo BARS (Visualizador de Espectro) */
+.progress-line[data-style="bars"] {
+    /* La línea de progreso ya no es el color de relleno, son las barras */
+    background: transparent !important; 
+    opacity: 1; 
+    transform: none !important; /* Reseteamos cualquier scaleY */
+    box-shadow: none !important; /* Reseteamos cualquier box-shadow */
+    transition: width 0.1s linear, opacity 0.3s;
+}
+
+/* ************************************************************* */
+/* ESTILOS PARA LAS BARRAS DINÁMICAS (dyn-bar) */
+/* ************************************************************* */
+
+.dyn-bar {
+    width: 3px;
+    min-width: 3px;
+    max-width: 3px;
+    height: 100%;
+    background: linear-gradient(to top, var(--main-color), rgba(255,255,255,0.9));
+    border-radius: 3px 3px 0 0;
+    transform: scaleY(0.5);
+    transform-origin: bottom;
+    transition: transform 0.04s ease-out, box-shadow 0.04s ease-out;
+    box-shadow: 0 0 15px var(--main-color), 0 -3px 10px var(--main-color);
+    opacity: 1;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+/* Ocultar las barras dinámicas por defecto, solo se mostrarán en data-style="bars" */
+.progress-line:not([data-style="bars"]) .dyn-bar {
+    display: none;
+}
+/* ************************************************************* */
+
 .time-current, .time-total { font-size: 0.85em; opacity: 0.7; width: 35px; text-align: center; }
 
 /* 6. Estilos del Botón de Carga Personalizado */
@@ -127,7 +210,6 @@ body {
 #file-input { display: none; }
 .custom-file-btn {
     display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 25px; 
-    /* CORRECCIÓN: Usamos --card-base-color para el fondo del botón de carga */
     background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
     border: 1px solid rgba(255, 255, 255, 0.3); 
     color: var(--card-text-color); font-weight: 500; cursor: pointer; transition: background 0.3s, transform 0.1s; 
@@ -135,22 +217,22 @@ body {
 }
 .custom-file-btn:hover { background: rgba(var(--card-base-color), 0.35); }
 
-/* --- 7. Estilos del Selector de Color --- */
+/* --- 7. Estilos del Selector de Color (Panel General) --- */
 .color-selector {
     z-index: 10;
     display: flex; 
     gap: 0; 
     flex-direction: column; 
-    
-    /* CORRECCIÓN: Usamos --card-base-color para el fondo del selector */
     background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
-    border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* CLAVE: Aplicar el blur como variable CSS */
     backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--card-border-color);
     color: var(--card-text-color);
-    padding: 20px; 
-    width: 170px; 
-    min-height: 400px; 
+    padding: 20px;
+    width: 170px;
+    min-height: 400px;
     position: relative;
 }
 
@@ -158,241 +240,223 @@ body {
 .color-options-panel h3 { margin: 0; font-size: 1.0em; opacity: 0.8; }
 
 /* Estilos internos de controles de color */
-.color-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
-}
+.color-options { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
 .color-swatch { 
-    --swatch-color: #fff; width: 25px; height: 25px; 
-    border-radius: 50%; background-color: var(--swatch-color); border: 3px solid transparent; 
-    cursor: pointer; transition: transform 0.2s, border-color 0.2s; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); 
-    position: relative; 
-    z-index: 21;
+    --swatch-color: #fff; width: 25px; height: 25px; border-radius: 50%; 
+    background-color: var(--swatch-color); border: 3px solid transparent; 
+    cursor: pointer; transition: transform 0.2s, border-color 0.2s; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); position: relative; z-index: 21; 
 }
 .color-swatch.active { border-color: var(--card-text-color); transform: scale(1.1); }
 
+/* ******************************************* */
+/* NUEVOS ESTILOS PARA AMBOS PANELES DE CONTROL */
+/* ******************************************* */
+.customization-panel { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--card-border-color); }
+.customization-panel h3 { margin-bottom: 10px; font-size: 1.0em; opacity: 0.8; }
+.hidden { display: none !important; }
+
+/* Énfasis */
+.accent-swatch.active { border-color: var(--main-color); /* Usar el color de énfasis para el borde */ }
+
+/* Grupos de control para Blur y Opacidad */
+.control-group { display: flex; flex-direction: column; margin-bottom: 15px; gap: 5px; }
+.control-group label { font-size: 0.9em; opacity: 0.7; }
+.control-group input[type="range"] { 
+    width: 100%; /* Estilo minimalista para sliders horizontales */
+    -webkit-appearance: none; appearance: none; height: 6px; 
+    background: rgba(var(--card-base-color), 0.3); border-radius: 3px; 
+    outline: none; transition: opacity .2s;
+}
+.control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 14px; height: 14px; 
+    border-radius: 50%; background: var(--main-color); cursor: pointer;
+    box-shadow: 0 0 5px var(--main-color);
+}
+.control-group input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; 
+    background: var(--main-color); cursor: pointer;
+    box-shadow: 0 0 5px var(--main-color);
+    border: none;
+}
+.control-group span { font-size: 0.9em; opacity: 0.9; text-align: right; }
+
+/* Estilos de Previsualización */
+.style-swatch { 
+    width: 60px; height: 40px; border-radius: 8px; 
+    background: rgba(var(--card-base-color), 0.3); 
+    display: flex; justify-content: center; align-items: center;
+    border: 3px solid transparent; 
+    transition: border-color 0.2s;
+    padding: 0;
+}
+.style-swatch.active { border-color: var(--card-text-color); }
+.style-preview { width: 80%; height: 3px; background-color: var(--main-color); border-radius: 2px; }
+.style-preview.spark { box-shadow: 0 0 2px var(--main-color); }
+.style-preview.bars { 
+    /* Previsualización del estilo de barras de frecuencia (3 barras estáticas en el selector) */
+    display: flex; justify-content: space-around; align-items: flex-end; /* Alinear abajo */
+    background: transparent; height: 80%; width: 90%; 
+}
+.style-preview.bars > div { 
+    width: 25%; height: 3px; background-color: var(--main-color); 
+    border-radius: 1px; 
+    /* Simulación de diferentes alturas */
+    transform: scaleY(0.5); 
+    box-shadow: 0 0 2px var(--main-color);
+}
+.style-preview.bars > div:nth-child(1) { transform: scaleY(1.0); } /* Grave */
+.style-preview.bars > div:nth-child(2) { transform: scaleY(1.5); } /* Medio */
+.style-preview.bars > div:nth-child(3) { transform: scaleY(0.8); } /* Agudo */
+
+/* ******************************************* */
+/* FIN NUEVOS ESTILOS DE CONTROL */
+/* ******************************************* */
 
 /* Sub-panel de control de sensibilidad (Slider) */
-.sensitivity-control {
-    position: absolute;
-    left: 100%; 
-    top: 50%;
-    transform: translate(15px, -50%); 
-    
-    display: flex;
-    justify-content: center; 
-    align-items: center; 
-    width: 30px; 
-    height: 100%;
-    z-index: 15; 
-    pointer-events: auto; 
+.sensitivity-control { 
+    position: absolute; left: 100%; top: 50%; transform: translate(15px, -50%); 
+    display: flex; justify-content: center; align-items: center; 
+    width: 30px; height: 100%; z-index: 15; pointer-events: auto; 
 }
-
-.slider-container {
-    display: flex;
-    height: 280px; 
-    align-items: center;
-    padding: 0; 
-    position: static; 
-    transform: none; 
-    z-index: 1; 
-}
+.slider-container { display: flex; height: 280px; align-items: center; padding: 0; position: static; transform: none; z-index: 1; }
 
 /* Estilos para el input de rango (slider) vertical */
-#sensitivity-slider {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-    
-    width: 200px; 
-    height: 8px; 
-    transform: rotate(270deg);
-    transform-origin: 50% 50%;
-    
-    margin: 0; 
+#sensitivity-slider { 
+    -webkit-appearance: none; -moz-appearance: none; appearance: none; 
+    background: transparent; cursor: pointer; width: 200px; height: 8px; 
+    transform: rotate(270deg); transform-origin: 50% 50%; margin: 0; 
     position: static; 
 }
 
 /* Estilo de la pista del slider */
 #sensitivity-slider::-webkit-slider-runnable-track {
-    background: rgba(var(--card-base-color), 0.2); /* CORRECCIÓN: Usamos --card-base-color */
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
+    background: rgba(var(--card-base-color), 0.3); border-radius: 4px; height: 6px;
 }
 #sensitivity-slider::-moz-range-track {
-    background: rgba(var(--card-base-color), 0.2); /* CORRECCIÓN: Usamos --card-base-color */
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
+    background: rgba(var(--card-base-color), 0.3); border-radius: 4px; height: 6px;
 }
 
 /* Estilo del "pulgar" (thumb) del slider */
 #sensitivity-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    margin-top: -3.5px; 
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: var(--main-color);
-    box-shadow: 0 0 10px var(--main-color);
-    transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+    -webkit-appearance: none; appearance: none; width: 14px; height: 14px; 
+    border-radius: 50%; background: var(--main-color); cursor: pointer;
+    box-shadow: 0 0 5px var(--main-color);
+    margin-top: -4px;
 }
 #sensitivity-slider::-moz-range-thumb {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: var(--main-color);
-    box-shadow: 0 0 10px var(--main-color);
+    width: 14px; height: 14px; border-radius: 50%; 
+    background: var(--main-color); cursor: pointer;
+    box-shadow: 0 0 5px var(--main-color);
     border: none;
-    transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
 }
 
-/* --- 8. Estilos del Panel de Lista de Reproducción --- */
+
+/* --- 8. Estilos de la Lista de Reproducción --- */
 .playlist-panel {
-    width: 300px; height: 400px; 
-    /* CORRECCIÓN: Usamos --card-base-color para el fondo del panel */
+    width: 250px; 
+    min-height: 400px;
     background: rgba(var(--card-base-color), var(--card-bg-opacity)); 
     border-radius: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); backdrop-filter: var(--glass-blur); 
-    border: 1px solid var(--card-border-color); 
-    color: var(--card-text-color);
-    padding: 20px; display: flex; flex-direction: column; z-index: 1; 
-    margin-top: 0; 
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--card-border-color);
+    color: var(--card-text-color); 
+    padding: 20px;
+    overflow: hidden;
 }
-.playlist-panel h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.2em; font-weight: 600; border-bottom: 1px solid var(--card-border-color); padding-bottom: 10px; }
-#playlist-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+
+.playlist-panel h3 { margin: 0 0 15px 0; font-size: 1.2em; opacity: 0.9; }
+#playlist-list { 
+    list-style: none; margin: 0; padding: 0; 
+    max-height: 350px; overflow-y: auto; 
+}
+.empty-message { opacity: 0.6; text-align: center; padding: 20px 0; }
+/* Estilos para scrollbar */
 #playlist-list::-webkit-scrollbar { width: 5px; }
+#playlist-list::-webkit-scrollbar-track { background: rgba(var(--card-base-color), 0.1); }
 #playlist-list::-webkit-scrollbar-thumb { background: rgba(var(--card-base-color), 0.3); border-radius: 10px; }
-#playlist-list li { padding: 8px 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; transition: background 0.2s, color 0.2s; font-size: 0.9em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-/* Usamos --card-base-color con opacidad para el hover */
-#playlist-list li:hover { background: rgba(var(--card-base-color), 0.15); } 
-#playlist-list li.current-track { background: var(--main-color); color: #fff; font-weight: bold; box-shadow: 0 0 10px var(--main-color); transition: background 0.5s ease-in-out, box-shadow 0.5s ease-in-out; }
-.empty-message { opacity: 0.6; font-style: italic; text-align: center; padding-top: 50px !important; cursor: default !important; }
+
+#playlist-list li { 
+    padding: 8px 10px; margin-bottom: 5px; border-radius: 8px; 
+    cursor: pointer; transition: background 0.2s, color 0.2s; 
+    font-size: 0.9em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; 
+}
+#playlist-list li:hover { background: rgba(var(--card-base-color), 0.15); }
+#playlist-list li.current-track { background: var(--main-color); color: #fff; font-weight: bold; box-shadow: 0 0 10px var(--main-color); }
 
 
-/* =================================================================== */
-/* --- 9. MEDIA QUERIES (Responsividad) --- */
-/* =================================================================== */
-
-@media (max-width: 900px) {
-    
-    /* Asegura que el contenedor principal esté alineado arriba para evitar grandes espacios vacíos */
-    body {
-        align-items: flex-start;
-        min-height: 100vh;
-        padding-top: 20px; /* Pequeño margen superior */
-    }
-
-    /* 1. Contenedor Principal (Cambio de Layout) */
+/* --- 9. Media Queries (Responsividad) --- */
+@media (max-width: 1024px) {
+    /* ... (Resto de media queries existentes) ... */
     .main-container {
-        /* Apila los elementos verticalmente */
         flex-direction: column;
-        gap: 25px;
-        padding: 0 20px; /* Padding horizontal */
-        align-items: center; /* Centra los bloques en la columna */
-        width: 100%;
-        box-sizing: border-box; /* Incluye padding en el ancho */
-    }
-    
-    /* 2. Reproductor y Paneles (Ajuste de Ancho) */
-    .player-card {
-        width: 100%; /* Ocupa todo el ancho disponible menos el padding */
-        min-width: 0; /* Permite que el ancho se reduzca */
-        max-width: 450px; /* Mantiene un límite máximo para tablets */
-        box-sizing: border-box;
-        padding: 20px; /* Reduce un poco el padding interno */
-    }
-    
-    .playlist-panel {
-        width: 100%; 
-        max-width: 450px;
-        height: 300px; /* Altura ajustada para móviles */
-        box-sizing: border-box;
-    }
-    
-    /* 3. Selector de Color y Sensibilidad (Posicionamiento y Estilo) */
-    .color-selector {
-        flex-direction: row; /* Coloca el slider junto a los colores */
-        width: 100%;
-        max-width: 450px;
-        padding: 15px 20px;
-        min-height: auto;
-        justify-content: space-between;
         align-items: center;
-        box-sizing: border-box;
+        gap: 20px;
+        padding: 20px;
     }
     
-    /* Reposiciona el control de sensibilidad DENTRO del .color-selector */
+    .player-card {
+        width: 90vw;
+        max-width: 500px;
+        min-width: 0;
+    }
+
+    .playlist-panel {
+        width: 90vw;
+        max-width: 500px;
+        height: 300px; 
+    }
+
+    .color-selector {
+        width: 90vw;
+        max-width: 500px; 
+        min-height: auto; 
+        padding: 20px; 
+    }
+
+    /* Ocultar el slider de sensibilidad o moverlo */
     .sensitivity-control {
         position: static; 
         transform: none; 
-        width: 100px; /* Ancho ajustado */
-        height: auto;
-        display: flex;
-        justify-content: flex-end; /* Alinea el slider a la derecha */
-        padding-right: 0;
-    }
-
-    /* Gira el slider de nuevo a horizontal y ajusta el tamaño */
-    .slider-container {
-        height: 30px; 
-    }
-    
-    #sensitivity-slider {
-        width: 100px; /* Lo hacemos más pequeño */
-        transform: rotate(0deg); /* Vuelve a ser horizontal */
-        margin: 0;
-    }
-    
-    /* 4. Información de la Canción (Ajuste para Espacio) */
-    .song-info {
-        flex-wrap: wrap; /* Permite que la portada y el texto se envuelvan si es necesario */
-        justify-content: center;
-    }
-    
-    .text-details {
-        text-align: center;
-        width: 100%; /* Ocupa todo el ancho debajo de la carátula */
-        margin-top: 10px;
-    }
-    
-    .song-title { font-size: 1.5em; }
-    .artist-name { font-size: 0.9em; }
-
-    /* Ajuste para el botón de carga */
-    .custom-file-btn {
         width: 100%;
+        margin-top: 20px;
+        height: auto;
+    }
+    .slider-container {
+        width: 100%;
+        height: auto;
         justify-content: center;
-        text-align: center;
-        box-sizing: border-box;
+        align-items: center;
+    }
+    #sensitivity-slider {
+        width: 80%;
+        transform: rotate(0deg); 
+        height: 8px;
     }
 }
 
-@media (max-width: 500px) {
-    /* Ajustes para móviles muy pequeños */
+@media (max-width: 600px) {
+    .player-card {
+        padding: 20px; 
+    }
     
-    /* Reduce el tamaño de la portada para ahorrar espacio vertical */
+    .song-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
     .album-art {
-        width: 100px;
-        height: 100px;
+        width: 100px; height: 100px;
     }
-    #album-icon {
-        font-size: 60px;
-    }
-    .play-btn { 
-        width: 60px; 
-        height: 60px; 
-        font-size: 30px; 
-    }
-    .control-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-    }
+    
+    #album-icon { font-size: 60px; }
+    
+    .text-details { width: 100%; text-align: center; }
+    .song-title { font-size: 1.5em; }
+    
+    .player-controls { gap: 20px; }
+    .play-btn { width: 60px; height: 60px; font-size: 30px; }
+    .control-btn { width: 40px; height: 40px; font-size: 20px; }
 }

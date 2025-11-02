@@ -110,7 +110,7 @@ let progressStylePanel, progressStyleOptions;
 let progressStyle; 
 
 // NUEVAS VARS para el visualizador de frecuencia
-const NUM_BARS = 64; // <--- CORREGIDO: Vuelve a ser 128
+const NUM_BARS = 128; // <--- Se mantiene a 128
 let dynamicBars = []; // Array para almacenar los elementos DOM de las barras
 let visualizerBarContainer; // Contenedor nuevo que siempre será 100% de ancho
 
@@ -301,7 +301,7 @@ function loadTrack(index, autoPlay = false) {
         const track = playlist[currentTrackIndex];
         
         // Variable para la URL de la portada que usaremos en Media Session
-        let albumArtUrl = null; 
+        let albumArtUrl = 'https://via.placeholder.com/512x512.png?text=M+Icon'; // Inicializado con un fallback de 512x512
 
         if (audioPlayer.src && audioPlayer.src.startsWith('blob:')) {
              URL.revokeObjectURL(audioPlayer.src);
@@ -327,18 +327,19 @@ function loadTrack(index, autoPlay = false) {
 
                     if (tags.picture) {
                         const picture = tags.picture;
+                        // Genera la URL de datos (data URL)
                         let base64String = btoa(picture.data.map(c => String.fromCharCode(c)).join(''));
-                        const dataUrl = `url(data:${picture.format};base64,${base64String})`;
+                        const format = picture.format || 'image/png'; // Usar 'image/png' como fallback
+                        const dataUrl = `url(data:${format};base64,${base64String})`;
                         
                         albumArtContainer.style.backgroundImage = dataUrl;
                         albumIcon.style.display = 'none';
                         
-                        // CLAVE: Crear la URL de la imagen para Media Session
-                        albumArtUrl = `data:${picture.format};base64,${base64String}`;
+                        // CLAVE: Asignar la URL de datos a albumArtUrl para la Media Session
+                        albumArtUrl = `data:${format};base64,${base64String}`;
                     } else {
                         albumIcon.style.display = 'block';
-                        // Usar una imagen de marcador de posición si no hay portada
-                        albumArtUrl = 'https://via.placeholder.com/96x96.png?text=M+Icon'; 
+                        // Si no hay portada, mantiene el valor del fallback (placeholder)
                     }
                     
                     // **** LLAMADA CLAVE: ACTUALIZAR MEDIA SESSION CON LOS METADATOS ****
@@ -354,7 +355,7 @@ function loadTrack(index, autoPlay = false) {
                     albumIcon.style.display = 'block';
 
                     // Actualizar Media Session incluso sin portada
-                    updateMediaSession(title, artist, 'https://via.placeholder.com/96x96.png?text=M+Icon');
+                    updateMediaSession(title, artist, albumArtUrl); // Usa el placeholder
                 }
             });
         } else {
@@ -363,7 +364,7 @@ function loadTrack(index, autoPlay = false) {
             artistName.textContent = 'Librería ID3 no cargada';
 
             // Actualizar Media Session
-            updateMediaSession(title, 'Librería ID3 no cargada', 'https://via.placeholder.com/96x96.png?text=M+Icon');
+            updateMediaSession(title, 'Librería ID3 no cargada', albumArtUrl); // Usa el placeholder
         }
 
         updatePlaylistUI();
@@ -616,18 +617,26 @@ function createDynamicBars() {
  */
 function updateMediaSession(title, artist, albumArtUrl) {
     if ('mediaSession' in navigator) {
+        // Obtenemos el tipo de imagen del inicio de la data URL (ej: image/jpeg)
+        const formatMatch = albumArtUrl.match(/^data:(image\/\w+);base64/);
+        const imageType = formatMatch ? formatMatch[1] : 'image/png';
+
         // Establece los metadatos
         navigator.mediaSession.metadata = new MediaMetadata({
             title: title || 'Título Desconocido',
             artist: artist || 'Artista Desconocido',
             album: 'Tu Reproductor Web', 
             artwork: [
-                // Es crucial tener el tamaño para que se muestre correctamente
-                { src: albumArtUrl, sizes: '96x96', type: 'image/png' }
+                // CLAVE: Un tamaño grande y un tipo válido son cruciales para el fondo de la notificación
+                { 
+                    src: albumArtUrl, 
+                    sizes: '512x512', // Tamaño recomendado para alta resolución
+                    type: imageType 
+                }
             ]
         });
         
-        console.log(`Media Session Metadata Updated: ${title} by ${artist}`);
+        console.log(`Media Session Metadata Updated: ${title} by ${artist} with image type ${imageType}`);
     }
 }
 

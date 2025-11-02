@@ -300,6 +300,9 @@ function loadTrack(index, autoPlay = false) {
         currentTrackIndex = index;
         const track = playlist[currentTrackIndex];
         
+        // Variable para la URL de la portada que usaremos en Media Session
+        let albumArtUrl = null; 
+
         if (audioPlayer.src && audioPlayer.src.startsWith('blob:')) {
              URL.revokeObjectURL(audioPlayer.src);
         }
@@ -316,9 +319,11 @@ function loadTrack(index, autoPlay = false) {
             window.jsmediatags.read(track, {
                 onSuccess: function(tag) {
                     const tags = tag.tags;
+                    const title = tags.title || track.name.replace(/\.[^/.]+$/, "");
+                    const artist = tags.artist || 'Artista Desconocido';
                     
-                    songTitle.textContent = tags.title || track.name.replace(/\.[^/.]+$/, "");
-                    artistName.textContent = tags.artist || 'Artista Desconocido';
+                    songTitle.textContent = title;
+                    artistName.textContent = artist;
 
                     if (tags.picture) {
                         const picture = tags.picture;
@@ -327,19 +332,38 @@ function loadTrack(index, autoPlay = false) {
                         
                         albumArtContainer.style.backgroundImage = dataUrl;
                         albumIcon.style.display = 'none';
+                        
+                        // CLAVE: Crear la URL de la imagen para Media Session
+                        albumArtUrl = `data:${picture.format};base64,${base64String}`;
                     } else {
                         albumIcon.style.display = 'block';
+                        // Usar una imagen de marcador de posición si no hay portada
+                        albumArtUrl = 'https://via.placeholder.com/96x96.png?text=M+Icon'; 
                     }
+                    
+                    // **** LLAMADA CLAVE: ACTUALIZAR MEDIA SESSION CON LOS METADATOS ****
+                    updateMediaSession(title, artist, albumArtUrl);
+                    // *****************************************************************
                 },
                 onError: function(error) {
-                    songTitle.textContent = track.name.replace(/\.[^/.]+$/, "");
-                    artistName.textContent = 'Artista Desconocido (Metadata no encontrada)';
+                    const title = track.name.replace(/\.[^/.]+$/, "");
+                    const artist = 'Artista Desconocido (Metadata no encontrada)';
+                    
+                    songTitle.textContent = title;
+                    artistName.textContent = artist;
                     albumIcon.style.display = 'block';
+
+                    // Actualizar Media Session incluso sin portada
+                    updateMediaSession(title, artist, 'https://via.placeholder.com/96x96.png?text=M+Icon');
                 }
             });
         } else {
-            songTitle.textContent = track.name.replace(/\.[^/.]+$/, "");
+            const title = track.name.replace(/\.[^/.]+$/, "");
+            songTitle.textContent = title;
             artistName.textContent = 'Librería ID3 no cargada';
+
+            // Actualizar Media Session
+            updateMediaSession(title, 'Librería ID3 no cargada', 'https://via.placeholder.com/96x96.png?text=M+Icon');
         }
 
         updatePlaylistUI();
@@ -583,6 +607,81 @@ function createDynamicBars() {
     if(progressLine) progressLine.innerHTML = '';
 }
 
+// ====================================================================
+// E. MEDIA SESSION API (Notificaciones de Sistema y Widgets)
+// ====================================================================
+
+/**
+ * 1. Configura los metadatos de la canción para la notificación/widget del sistema.
+ */
+function updateMediaSession(title, artist, albumArtUrl) {
+    if ('mediaSession' in navigator) {
+        // Establece los metadatos
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: title || 'Título Desconocido',
+            artist: artist || 'Artista Desconocido',
+            album: 'Tu Reproductor Web', 
+            artwork: [
+                // Es crucial tener el tamaño para que se muestre correctamente
+                { src: albumArtUrl, sizes: '96x96', type: 'image/png' }
+            ]
+        });
+        
+        console.log(`Media Session Metadata Updated: ${title} by ${artist}`);
+    }
+}
+
+/**
+ * 2. Configura los manejadores para los botones de control del sistema (Play/Pause/Next/Prev).
+ */
+function setupMediaSessionHandlers() {
+    if ('mediaSession' in navigator) {
+        const audioPlayer = document.getElementById('audio-player');
+
+        // Manejar el botón de Reproducir
+        navigator.mediaSession.setActionHandler('play', () => {
+            if (audioPlayer.paused) {
+                // Llama al play() del reproductor para reanudar
+                audioPlayer.play().catch(e => console.error("Error al reanudar la reproducción:", e)); 
+            }
+        });
+
+        // Manejar el botón de Pausa
+        navigator.mediaSession.setActionHandler('pause', () => {
+            if (!audioPlayer.paused) {
+                // Llama al pause() del reproductor
+                audioPlayer.pause();
+            }
+        });
+
+        // Manejar el botón de Pista Siguiente
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            console.log('Media Session: Ejecutando nexttrack');
+            // Reutiliza la lógica de tu botón nextBtn
+            if (playlist.length > 0) {
+                let nextIndex = (currentTrackIndex + 1) % playlist.length;
+                loadTrack(nextIndex, true);
+            }
+        });
+
+        // Manejar el botón de Pista Anterior
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            console.log('Media Session: Ejecutando previoustrack');
+            // Reutiliza la lógica de tu botón prevBtn
+            if (playlist.length > 0) {
+                let prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+                loadTrack(prevIndex, true);
+            }
+        });
+        
+        // Opcional: El manejador 'stop' para cerrar la notificación de medios
+        navigator.mediaSession.setActionHandler('stop', () => {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        });
+    }
+}
+
 
 // ====================================================================
 // D. INICIALIZACIÓN (Todos los eventos y asignaciones de DOM aquí)
@@ -632,6 +731,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // CLAVE: Crear el visualizador de barras dinámicas (lo inyecta en el DOM)
     createDynamicBars(); 
+    
+    // ** CLAVE: CONFIGURAR LOS MANEJADORES DE MEDIA SESSION **
+    setupMediaSessionHandlers();
 
     // 2. CARGAR Y APLICAR ESTADOS GUARDADOS
     // 2.1 Cargar Tema
